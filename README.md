@@ -50,3 +50,39 @@ Additional references:
 - Single-end or paired-end (paired-end is better to align but might not be necessary if the alignment is good enough with single-end)
 - Remove the overlap (when the fragments are bigger than the reads length)
 - Directional (only original top and bottom strands in single-end mode) or non-directional libraries (also the complementary strands). TruSeq adaptors are automatically directional. To find out:  https://www.seqanswers.com/forum/applications-forums/sample-prep-library-generation/15699-did-i-make-directional-or-non-directional-bs-seq-libraries?t=18908  
+
+# 3° Preparation of the data
+
+## 1° Quality control of raw sequencing data
+
+Run FASTQC and MULTIQC for multiple comparison on the .fasta.gz files. BSEQC can also be used for more details.
+https://www.bioinformatics.babraham.ac.uk/projects/fastqc/
+
+
+## 2° Trimming
+
+Run TRIM GALORE (which is using CUTADAPT) in order to:
+	- remove adapters
+	- remove low quality nucleotides (< 20)
+	- remove the end-repaired C at the extremity (--rrbs)
+
+Possible options are: 
+options:  --rrbs ; 
+possible add: 
+--non_directional
+--paired
+--clip_r2 2 (to remove 2 bases at 5' from R2)
+--output_directory #to redirect to another directory
+--quality <INT> #Phread scrore of 20 by deffault or change to 30
+--fastqc #to run fastqc after trimming
+--phred33 # by deffault
+--illumina # if not, will detect adaptors automatically
+--stringency <INT> #deffault is 1 > will decrease the A at the end because it is recognized as adaptor. We can use 2 instead
+--hardtrim5 <int> # to trim a number of bp at 5'
+--length <INT> #by deffault it discard reads smaller than 20bp ; we can change to 40 > it will increase the alignment
+
+```{r}
+
+~/TrimGalore-0.6.6/trim_galore --rrbs --quality 28 --illumina --stringency 2 --length 40 --output_dir /Users/fsilvestre/bioinformatic_workshop/RAW_data_Florida_Belize/TrimGalore_output /Users/fsilvestre/bioinformatic_workshop/RAW_data_Florida_Belize/fastq/*.gz
+
+```
