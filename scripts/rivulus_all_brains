@@ -1,0 +1,605 @@
+## Install requested packages
+
+
+```{r}
+
+library(pacman)
+
+BiocManager::install(c("Rqc", "methylKit", "ShortRead", "QuasR"))
+pacman::p_load(Rqc, methylKit, ShortRead, QuasR, remotes, factoextra, psych)
+
+```
+
+
+The rivulus brain smaples that are being analyzed are:
+
+samples 2 à 40 : Twin Cayes (37)
+samples 41 à 68 : Long Caye (28)
+samples 69 à 110 : EPP (40)
+samples 111 à 140 - le 128 : Long Key (29)
+
+Samples # 1, 12, 30, 70, 72, 128 were lost during the experimental process -> 134 samples total 
+
+
+## Importing the data in methylKit
+
+Once the files are in .BAM format after Samtools, we can import them in methylKit package in R using processBismarkAln function.
+
+We can now do it at once for several files (it takes 6-7min per file)
+It's an object methylRawList
+
+The output is .txt files.
+
+Here is the code for 6 samples but it must be performed for all the 134 samples (should take about 15 hours - depending on the informatic system you are using).
+
+```{r}
+
+file.list <- list( "Brain2.sorted.bam", "Brain3.sorted.bam", "Brain4.sorted.bam","Brain69.sorted.bam", "Brain71.sorted.bam", "Brain73.sorted.bam")
+
+myobj <- processBismarkAln(file.list,
+           sample.id=list("TC1","TC2","TC3", "EPP1", "EPP2", "EPP3"),
+           assembly="ASM164957v2",
+           treatment=c(1,1,1,0,0,0),
+           read.context="CpG",
+           save.folder = getwd(),
+           mincov = 10
+           )
+
+#characterize myobj
+length(myobj)
+class(myobj)
+head(myobj)
+
+```
+
+Then we can import the .txt files and work in methylKit.
+
+```{r}
+
+setwd("/Volumes/SSD FS 1/Valentine txt data brain") # adapt to your computer
+dir()
+
+txt.files <-list("2_CpG.txt",
+                 "3_CpG.txt",
+                 "4_CpG.txt",
+                 "5_CpG.txt",
+                 "6_CpG.txt",
+                 "7_CpG.txt",
+                 "8_CpG.txt",
+                 "9_CpG.txt",
+                 "10_CpG.txt",
+                 "11_CpG.txt",
+                 "13_CpG.txt",
+                 "14_CpG.txt",
+                 "15_CpG.txt",
+                 "16_CpG.txt",
+                 "17_CpG.txt",
+                 "18_CpG.txt",
+                 "19_CpG.txt",
+                 "20_CpG.txt",
+                 "21_CpG.txt",
+                 "22_CpG.txt",
+                 "23_CpG.txt",
+                 "24_CpG.txt",
+                 "25_CpG.txt",
+                 "26_CpG.txt",
+                 "27_CpG.txt",
+                 "28_CpG.txt",
+                 "29_CpG.txt",
+                 "31_CpG.txt",
+                 "32_CpG.txt",
+                 "33_CpG.txt",
+                 "34_CpG.txt",
+                 "35_CpG.txt",
+                 "36_CpG.txt",
+                 "37_CpG.txt",
+                 "38_CpG.txt",
+                 "39_CpG.txt",
+                 "40_CpG.txt",
+                 "41_CpG.txt",
+                 "42_CpG.txt",
+                 "43_CpG.txt",
+                 "44_CpG.txt",
+                 "45_CpG.txt",
+                 "46_CpG.txt",
+                 "47_CpG.txt",
+                 "48_CpG.txt",
+                 "49_CpG.txt",
+                 "50_CpG.txt",
+                 "51_CpG.txt",
+                 "52_CpG.txt",
+                 "53_CpG.txt",
+                 "54_CpG.txt",
+                 "55_CpG.txt",
+                 "56_CpG.txt",
+                 "57_CpG.txt",
+                 "58_CpG.txt",
+                 "59_CpG.txt",
+                 "60_CpG.txt",
+                 "61_CpG.txt",
+                 "62_CpG.txt",
+                 "63_CpG.txt",
+                 "64_CpG.txt",
+                 "65_CpG.txt",
+                 "66_CpG.txt",
+                 "67_CpG.txt",
+                 "68_CpG.txt",
+                 "69_CpG.txt",
+                 "71_CpG.txt",
+                 "73_CpG.txt",
+                 "74_CpG.txt",
+                 "75_CpG.txt",
+                 "76_CpG.txt",
+                 "77_CpG.txt",
+                 "78_CpG.txt",
+                 "79_CpG.txt",
+                 "80_CpG.txt",
+                 "81_CpG.txt",
+                 "82_CpG.txt",
+                 "83_CpG.txt",
+                 "84_CpG.txt",
+                 "85_CpG.txt",
+                 "86_CpG.txt",
+                 "87_CpG.txt",
+                 "88_CpG.txt",
+                 "89_CpG.txt",
+                 "90_CpG.txt",
+                 "91_CpG.txt",
+                 "92_CpG.txt",
+                 "93_CpG.txt",
+                 "94_CpG.txt",
+                 "95_CpG.txt",
+                 "96_CpG.txt",
+                 "97_CpG.txt",
+                 "98_CpG.txt",
+                 "99_CpG.txt",
+                 "100_CpG.txt",
+                 "101_CpG.txt",
+                 "102_CpG.txt",
+                 "103_CpG.txt",
+                 "104_CpG.txt",
+                 "105_CpG.txt",
+                 "106_CpG.txt",
+                 "107_CpG.txt",
+                 "108_CpG.txt",
+                 "109_CpG.txt",
+                 "110_CpG.txt",
+                 "111_CpG.txt",
+                 "112_CpG.txt",
+                 "113_CpG.txt",
+                 "114_CpG.txt",
+                 "115_CpG.txt",
+                 "116_CpG.txt",
+                 "117_CpG.txt",
+                 "118_CpG.txt",
+                 "119_CpG.txt",
+                 "120_CpG.txt",
+                 "121_CpG.txt",
+                 "122_CpG.txt",
+                 "123_CpG.txt",
+                 "124_CpG.txt",
+                 "125_CpG.txt",
+                 "126_CpG.txt",
+                 "127_CpG.txt",
+                 "129_CpG.txt",
+                 "130_CpG.txt",
+                 "131_CpG.txt",
+                 "132_CpG.txt",
+                 "133_CpG.txt",
+                 "134_CpG.txt",
+                 "135_CpG.txt",
+                 "136_CpG.txt",
+                 "137_CpG.txt",
+                 "138_CpG.txt",
+                 "139_CpG.txt",
+                 "140_CpG.txt")
+
+length(txt.files)
+
+sampleIDs <- list("2","3","4","5","6","7","8","9","10","11","13","14","15","16","17","18","19","20",
+                  "21","22","23","24","25","26","27","28","29","31","32","33","34","35","36","37","38","39","40",
+                  "41","42","43","44","45","46","47","48","49","50","51","52","53","54","55","56","57","58","59","60",
+                  "61","62","63","64","65","66","67","68","69","71","73","74","75","76","77","78","79","80",
+                  "81","82","83","84","85","86","87","88","89","90","91","92","93","94","95","96","97","98","99","100",
+                  "101","102","103","104","105","106","107","108","109","110","111","112","113","114","115","116","117","118","119","120","121","122","123","124","125","126","127","129","130","131","132","133","134","135","136","137","138","139","140")
+
+
+treatmentSpecification <- c(rep(1, times = 37),rep(2, times = 28),rep(3, times = 40),rep(4, times = 29))
+
+myobj= methRead(txt.files, 
+                sample.id = sampleIDs, 
+                assembly = "ASM164957v2",                                     
+                treatment = treatmentSpecification,                  
+                context = "CpG",
+                mincov=10)
+
+setwd("/Users/fsilvestre/OneDrive - Université de Namur/Documents_URBE/Data_analysis/LEAP_analyses/Valentine_RRBS") # adapt to your computer
+getwd()
+
+# to save time later, you can save the R object in a .RDS format and load it later.
+saveRDS(myobj, file="RDS/all_samples.RDS")
+myobj <- readRDS("RDS/all_samples.RDS")
+
+head(myobj)
+
+```
+
+
+## Analyse the CpG on each file and filter to get rid of the low quality
+
+```{r}
+
+getCoverageStats(myobj[[1]], plot = T, both.strands = F) 
+
+for(a in 1:134) {getCoverageStats(myobj[[a]], plot=F, strands = F)}
+
+getMethylationStats(myobj[[1]],plot=T,both.strands=F)
+
+```
+
+
+We make the analysis with a minimum coverage of 20 and we get rid of the 0.1% reads with the highest coverage for each sample.
+Then we unite all the samples in a single object taking all the CpG in common.
+
+```{r}
+
+filtered.myobj=filterByCoverage(myobj, lo.count =20, lo.perc = NULL, hi.count = NULL, hi.perc = 99.9 )
+
+saveRDS(filtered.myobj, file="all_samples_filtered20.RDS")
+filtered.myobj <- readRDS("RDS/all_samples_filtered20.RDS")
+
+length(filtered.myobj)
+
+meth=unite(filtered.myobj, destrand = T, min.per.group = NULL) 
+
+head(meth)
+
+saveRDS(meth, file="RDS/meth_all_samples.RDS")
+meth <- readRDS("RDS/meth_all_samples.RDS")
+
+```
+
+We obtain 10813 CpG in common for all samples with a minimum coverage of 20
+
+
+## Calculate the coefficient of variability of each CpG and get the percentage methylation Matrix
+
+```{r}
+
+pm=percMethylation(meth) 
+head(pm, 10) 
+summary(pm)
+describe(pm)
+
+
+CV=function(x){sd(x)/mean(x)*100} 
+mean <- function(x){mean(x)}
+
+TWINCAYES=apply(pm[,1:37], MARGIN = 1, FUN = CV)  
+summary(TWINCAYES)  
+hist(TWINCAYES)
+
+LONGCAYE=apply(pm[,38:65], MARGIN = 1, FUN = CV)  
+summary(LONGCAYE) 
+hist(LONGCAYE)
+
+EPP=apply(pm[,66:105], MARGIN = 1, FUN = CV)  
+summary(EPP)
+hist(EPP)
+
+LONGKEY=apply(pm[,106:134], MARGIN = 1, FUN = CV)  
+summary(LONGKEY) 
+hist(LONGKEY)
+
+```
+
+Mean CV TwinCayes: 45.3
+Mean CV LongCayes: 44.4
+Mean CV LongKey: 39.8
+Mean CV EPP: 36.03
+
+Median CV TwinCayes: 9.9
+Median CV LongCayes: 8.9
+Median CV LongKey: 7.7
+Median CV EPP: 7.7
+
+
+We can calculte a hierarchical clustering and a PCA
+
+```{r}
+
+#Clustering
+
+clusterSamples(meth, dist = "correlation", method = "ward", plot = T) #Regroupement en clusters
+
+#PCA
+
+pc=PCASamples(meth, obj.return = T, adj.lim = c(1,1), comp = c(1,2))
+
+pc=PCASamples(meth)
+
+eig.val <- get_eigenvalue(pc)
+eig.val
+fviz_eig(pc)
+
+```
+
+
+# Search for differentially methylated CpG and regions
+
+We are comparing the populations 2 by 2. Here we take EPP vs TC as example. You should change the subsamples to compare other populations.
+
+
+```{r}
+
+setwd("/Volumes/SSD FS 1/Valentine txt data brain") # adapt to your computer
+dir()
+
+txt.files <-list("2_CpG.txt",
+                 "3_CpG.txt",
+                 "4_CpG.txt",
+                 "5_CpG.txt",
+                 "6_CpG.txt",
+                 "7_CpG.txt",
+                 "8_CpG.txt",
+                 "9_CpG.txt",
+                 "10_CpG.txt",
+                 "11_CpG.txt",
+                 "13_CpG.txt",
+                 "14_CpG.txt",
+                 "15_CpG.txt",
+                 "16_CpG.txt",
+                 "17_CpG.txt",
+                 "18_CpG.txt",
+                 "19_CpG.txt",
+                 "20_CpG.txt",
+                 "21_CpG.txt",
+                 "22_CpG.txt",
+                 "23_CpG.txt",
+                 "24_CpG.txt",
+                 "25_CpG.txt",
+                 "26_CpG.txt",
+                 "27_CpG.txt",
+                 "28_CpG.txt",
+                 "29_CpG.txt",
+                 "31_CpG.txt",
+                 "32_CpG.txt",
+                 "33_CpG.txt",
+                 "34_CpG.txt",
+                 "35_CpG.txt",
+                 "36_CpG.txt",
+                 "37_CpG.txt",
+                 "66_CpG.txt",
+                 "67_CpG.txt",
+                 "68_CpG.txt",
+                 "69_CpG.txt",
+                 "71_CpG.txt",
+                 "73_CpG.txt",
+                 "74_CpG.txt",
+                 "75_CpG.txt",
+                 "76_CpG.txt",
+                 "77_CpG.txt",
+                 "78_CpG.txt",
+                 "79_CpG.txt",
+                 "80_CpG.txt",
+                 "81_CpG.txt",
+                 "82_CpG.txt",
+                 "83_CpG.txt",
+                 "84_CpG.txt",
+                 "85_CpG.txt",
+                 "86_CpG.txt",
+                 "87_CpG.txt",
+                 "88_CpG.txt",
+                 "89_CpG.txt",
+                 "90_CpG.txt",
+                 "91_CpG.txt",
+                 "92_CpG.txt",
+                 "93_CpG.txt",
+                 "94_CpG.txt",
+                 "95_CpG.txt",
+                 "96_CpG.txt",
+                 "97_CpG.txt",
+                 "98_CpG.txt",
+                 "99_CpG.txt",
+                 "100_CpG.txt",
+                 "101_CpG.txt",
+                 "102_CpG.txt",
+                 "103_CpG.txt",
+                 "104_CpG.txt",
+                 "105_CpG.txt",
+                 "106_CpG.txt",
+                 "107_CpG.txt",
+                 "108_CpG.txt",
+                 "109_CpG.txt",
+                 "110_CpG.txt")
+
+length(txt.files)
+
+sampleIDs <- c("2","3","4","5","6","7","8","9","10","11","13","14","15","16","17","18","19","20",
+                  "21","22","23","24","25","26","27","28","29","31","32","33","34","35","36","37","38","39","40",
+                  "69","71","73","74","75","76","77","78","79","80","81","82","83","84","85","86","87","88","89","90",
+                  "91","92","93","94","95","96","97","98","99","100","101","102","103","104","105","106","107","108","109","110")
+
+
+treatmentSpecification <- c(rep(1, times = 37),rep(2, times = 40))
+
+myobj= methRead(txt.files, 
+                sample.id = sampleIDs, 
+                assembly = "ASM164957v2",                                     
+                treatment = treatmentSpecification,                  
+                context = "CpG",
+                mincov=10)
+
+setwd("/Users/fsilvestre/OneDrive - Université de Namur/Documents_URBE/Data_analysis/LEAP_analyses/Valentine_RRBS") # adapt to your computer
+getwd()
+
+# to save time later, you can save the R object in a .RDS format and load it later.
+saveRDS(myobj, file="RDS/TCvsEPP.RDS")
+myobj <- readRDS("RDS/TCvsEPP.RDS")
+
+head(myobj)
+
+```
+
+
+```{r}
+
+getCoverageStats(myobj[[7]], plot = T, both.strands = F) 
+
+for(a in 1:77) {getCoverageStats(myobj[[a]], plot=F, strands = F)}
+
+getMethylationStats(myobj[[2]],plot=T,both.strands=F)
+
+```
+
+We keep the CpG present in minimum 80% of the individuals from the smallest population to compare:
+
+EPP = 40 -> 32 
+TC = 37 -> 30 
+LC = 28 -> 23
+LK = 29 -> 23
+
+```{r}
+
+filtered.myobj=filterByCoverage(myobj, lo.count =20, lo.perc = NULL, hi.count = NULL, hi.perc = 99.9 )
+
+saveRDS(filtered.myobj, file="RDS/TCvsEPP_filtered20.RDS")
+filtered.myobj <- readRDS("RDS/TCvsEPP_filtered20.RDS")
+
+length(filtered.myobj)
+
+meth=unite(filtered.myobj, destrand = T, min.per.group = 30L) # with TC the smallest population
+
+meth
+
+saveRDS(meth, file="RDS/meth_TCvsEPP.RDS")
+meth <- readRDS("RDS/meth_TCvsEPP.RDS")
+
+```
+
+meth is an object with 148 384 rows (CpGs) (coverage of 20 ; 80% of the samples)
+
+We calculate the DMCs using logistic regression, taking into account the covariate length.
+
+```{r}
+
+sampleIDs <- c("2","3","4","5","6","7","8","9","10","11","13","14","15","16","17","18","19","20",
+                  "21","22","23","24","25","26","27","28","29","31","32","33","34","35","36","37","38","39","40",
+                  "69","71","73","74","75","76","77","78","79","80","81","82","83","84","85","86","87","88","89","90",
+                  "91","92","93","94","95","96","97","98","99","100","101","102","103","104","105","106","107","108","109","110")
+
+
+lengthcov <- c(4.036,
+                  2.187,
+                  2.288,
+                  2.228,
+                  2.447,
+                  2.225,
+                  1.992,
+                  2.406,
+                  2.903,
+                  2.542,
+                  3.29,
+                  2.525,
+                  2.564,
+                  2.672,
+                  2.188,
+                  4.116,
+                  2.792,
+                  2.258,
+                  3.513,
+                  2.06,
+                  2.476,
+                  2.84,
+                  2.608,
+                  2.86,
+                  2.35,
+                  2.845,
+                  2.794,
+                  2.836,
+                  2.807,
+                  3.273,
+                  2.747,
+                  2.744,
+                  3.929,
+                  2.368,
+                  2.715,
+                  2.946,
+                  2.913,
+                  3.322,
+                  3.552,
+                  2.841,
+                  3.903,
+                  3.184,
+                  2.885,
+                  3.367,
+                  2.603,
+                  2.882,
+                  3.154,
+                  2.763,
+                  3.12,
+                  3.033,
+                  3.358,
+                  2.967,
+                  2.792,
+                  2.829,
+                  3.227,
+                  3.228,
+                  3.005,
+                  2.764,
+                  2.766,
+                  3.033,
+                  2.917,
+                  2.712,
+                  2.616,
+                  2.733,
+                  2.845,
+                  2.599,
+                  3.032,
+                  2.725,
+                  2.798,
+                  2.934,
+                  2.834,
+                  2.607,
+                  2.894,
+                  2.597,
+                  3.024,
+                  2.637,
+                  3.298)
+
+covar <- data.frame(sampleID = sampleIDs, length = lengthcov) 
+covar
+
+dm.lr.DMC=calculateDiffMeth(meth, overdispersion = "MN", test="Chisq", covariates = covar, adjust = "SLIM")
+
+saveRDS(dm.le.DMC, file="RDS/dm.le.DMC_TCvsEPP.RDS")
+
+
+dm.lr.DMC.bis=calculateDiffMeth(meth, overdispersion = "MN", test="Chisq", covariates = NULL, adjust = "SLIM")
+
+dm.lr.DMC
+
+all.diff.DMC=getMethylDiff(dm.lr.DMC, difference=10, qvalue=0.01, type="all")
+
+all.diff.DMC.bis=getMethylDiff(dm.lr.DMC.bis, difference=10, qvalue=0.01, type="all")
+
+all.diff.DMC
+
+hyper.DMC=getMethylDiff(dm.lr.DMC, difference=10, qvalue=0.01, type="hyper")
+hyper.DMC
+
+hypo.DMC=getMethylDiff(dm.lr.DMC, difference=10, qvalue=0.01, type="hypo")
+hypo.DMC
+
+getContext(dm.lr.DMC)
+```
+
+
+We export .CSV files to visualize and annotate in SeqMonk 
+
+```{r}
+
+write.csv2(dm.lr.DMR, file = "analyzed_regions_EPP_TC")
+
+
+```
