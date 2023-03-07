@@ -194,7 +194,8 @@ make
 
 ```
 
-	# 4° Rscript
+	
+# 4° Rscript
 
 Now that we have .BAM files for each sample, we can move to R and use an adapted package to analyse the DNA methylation.
 Here are some explanations about the procedure.
