@@ -194,3 +194,62 @@ make
 
 ```
 
+	# 4° Rscript
+
+Now that we have .BAM files for each sample, we can move to R and use an adapted package to analyse the DNA methylation.
+Here are some explanations about the procedure.
+
+## 1° Estimating the bisulfite conversion efficiency
+
+This can be found in the Bismark reports and should be above 98%.
+
+## 2° Quality requirement
+
+There are different sources of error variance: bisulfite conversion, sequencing, location of CpG (more errors in CGI shores and in exons).
+The coverage is important (10X means 10% accuracy > low ; it can't show less than 10% difference). We can increase the number of replicates to be able to sequence at lower rate.
+
+## 3° Choose a tool to compare methylation
+
+Read the reference: Liu Y, Han Y, Zhou L et al. A comprehensive evaluation of computational tools to identify differential methylation regions using RRBS data. Genomics. 2020;112:4567-4576.
+
+methylKit: logistic regression ; self-contained tests
+methylSig: beta binomial model with adjusting for biological variance
+DSS
+DMRfinder
+or combining 2 tools
+
+We are working with methylKit, which provides one of the best balance between precision, recall and accuracy.
+
+
+## 4° Differential DNA methylation analysis
+
+Filtering:
+Remove bases with small and high coverage (<10x ; > 99,9%). 
+Remove sites with very low variability.
+Take a minimum of samples per group 
+
+Structure of the data and test:
+Beta-binomial (methylKit/DSS) or logistic regression (methylKit) with or without overdispersion correction ; Chi-square or F-test. The best compromise with methylKit is logistic Chi-square with OC (Wreczycka 2017) > good sensitivity and specificity. 
+We can include covariate in binomial regression but only in DSS.general for beta binomial. Logistic is more sensitive to overdispersion.
+We can use mixed models in R for replicated measures.
+Adjust for overdispersion.
+
+DMC vs DMR:
+Complementary (use both). Defining regions must be careful. It can be a list of preexisting regions, or tiles (define the length (between 300 and 1000). 
+Define a minimum number of CpG per region. 
+DMRcaller can be used to detect DMRs between samples.
+
+Significance threshold:
+In exploratory studies, significance threshold can be less strict to avoid false negative. Using FDR (Bonferoni for validation studies).
+Set a minimum threshold ratio: 10% or more.
+
+
+## 5° Validation of the results
+
+Overdispersion:
+We should take the read depth into account in a beta-binomial analysis.
+The variance often deviates from the model due to the binary nature of the data and the different coverage. Beta-binomial is less sensitive to overdispersion than logistic regression. Overdispersion should be calculated (lambda).
+
+Graphical validation:
+Plot the relation between the significance and the coverage, as it should be independent (QQ plot or coverage plot).
+Manhattan and volcano plots.
