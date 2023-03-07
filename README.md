@@ -53,13 +53,47 @@ Additional references:
 
 # 3° Preparation of the data
 
-## 1° Quality control of raw sequencing data
+## 1° Cloning Github repository to your local folder
+
+Be sure to note the exact pathway to the folder where you downloaded the clone.Do not forget to return to the parent directory where you cloned the repository before you run each step.
+
+```{r}
+
+git clone https://github.com/fredsilvestre/rivulus_population_methylation
+
+```
+
+Then create the following folders within the cloned repository in order to organize the data.
+
+```{r}
+
+mkdir ./rivulus_population_methylation/data/
+        
+mkdir ./rivulus_population_methylation/data/fastq
+
+mkdir ./rivulus_population_methylation/data/trimgalore_output
+
+mkdir ./rivulus_population_methylation/data/bismark_output
+
+mkdir ./rivulus_population_methylation/data/csv
+
+mkdir ./rivulus_population_methylation/data/fastqc
+
+mkdir ./rivulus_population_methylation/data/genome
+
+```
+
+
+## 3° Download the fastq files from bisulfite sequencing
+
+
+## 4° Quality control of raw sequencing data
 
 Run FASTQC and MULTIQC for multiple comparison on the .fasta.gz files. BSEQC can also be used for more details.
 https://www.bioinformatics.babraham.ac.uk/projects/fastqc/
 
 
-## 2° Trimming
+## 5° Trimming
 
 Run TRIM GALORE (which is using CUTADAPT) in order to:
 	- remove adapters
@@ -83,6 +117,80 @@ possible add:
 
 ```{r}
 
-~/TrimGalore-0.6.6/trim_galore --rrbs --quality 28 --illumina --stringency 2 --length 40 --output_dir /Users/fsilvestre/bioinformatic_workshop/RAW_data_Florida_Belize/TrimGalore_output /Users/fsilvestre/bioinformatic_workshop/RAW_data_Florida_Belize/fastq/*.gz
+~/TrimGalore-0.6.6/trim_galore --rrbs --quality 28 --illumina --stringency 2 --length 40 --output_dir ./rivulus_population_methylation/TrimGalore_output ./rivulus_population_methylation/fastq/*.gz
 
 ```
+
+
+## 6° Download the reference genome from NCBI
+
+The last genome assembly of the mangrove rivulus (RefSeq assembly accession: GCF_001649575.2 ) can be found here @ https://www.ncbi.nlm.nih.gov/data-hub/genome/GCF_001649575.2/
+You can either download it from this website and unzip it, or use the 3 command lines together.
+
+```{r}
+
+cd ./rivulus_population_methylation/data/genome/
+
+wget ftp://ftp.ncbi.nlm.nih.gov/genomes/refseq/vertebrate_other/Kryptolebias_marmoratus/latest_assembly_versions/GCF_001649575.2_ASM164957v2/GCF_001649575.2_ASM164957v2_genomic.gff.gz
+wget ftp://ftp.ncbi.nlm.nih.gov/genomes/refseq/vertebrate_other/Kryptolebias_marmoratus/latest_assembly_versions/GCF_001649575.2_ASM164957v2/GCF_001649575.2_ASM164957v2_genomic.fna.gz
+
+gunzip GCF*
+```
+
+
+## 7° Prepare the genome in Bismark
+
+Installation information for Bismark can be found @ https://github.com/FelixKrueger/Bismark 
+"Bismark is a program to map bisulfite treated sequencing reads to a genome of interest and perform methylation calls in a single step. The output can be easily imported into a genome viewer, such as SeqMonk, and enables a researcher to analyse the methylation levels of their samples straight away. It's main features are:
+Bisulfite mapping and methylation calling in one single step
+Supports single-end and paired-end read alignments
+Supports ungapped, gapped or spliced alignments
+Alignment seed length, number of mismatches etc. are adjustable
+Output discriminates between cytosine methylation in CpG, CHG and CHH context"
+
+Change the extension of the genome file into .fa to be recognized by Bismark.
+Run the lines below to prepare the genome in Bismark.
+```{r}
+
+/Applications/Bismark-0.22.3/bismark_genome_preparation --path_to_aligner /Applications/bowtie/bin/ --verbose ~/rivulus_population_methylation/data/genome/
+        
+```
+
+
+## 8° Align sequences to the reference genome using Bismark
+
+
+```{r}
+
+/Applications/Bismark-0.22.3/bismark --genome ~/rivulus_population_methylation/data/genome/ --score_min L,0,-0.6 --output_dir ~/rivulus_population_methylation/data/genome/bismark_output ~/rivulus_population_methylation/data/genome/trimGalore_output/*.fq.gz
+
+```
+
+
+## 9° Samtools
+
+The output are sam.gz files that must first be uncompressed.
+Bismark writes a report in .txt where we can find many infos such as the average % methylation.
+
+We must first reorganize the  files after Bismark with the samtools package from the terminal. When you align FASTQ files with all current sequence aligners, the alignments produced are in random order with respect to their position in the reference genome. In other words, the BAM file is in the order that the sequences occurred in the input FASTQ files.
+
+Now we read a file from Bismark with the format .SAM
+SAM files must be sorted by chromosome and read position columns, using ‘sort’ command in unix-like machines will accomplish such a sort easily. BAM files should be sorted and indexed. This could be achieved with samtools (http://www.htslib.org/doc/samtools.html).
+Follow samtools tutorial: http://quinlanlab.org/tutorials/samtools/samtools.html#:~:text=samtools%20%E2%80%9Csort%E2%80%9D&text=In%20other%20words%2C%20the%20BAM,in%20the%20input%20FASTQ%20files.&text=Doing%20anything%20meaningful%20such%20as,occur%20in%20%E2%80%9Cgenome%20order%E2%80%9D.
+List of terminal commands: https://www.makeuseof.com/tag/mac-terminal-commands-cheat-sheet/
+
+
+```{r}
+
+cd ~
+mkdir ~/samtools
+cd ~/samtools
+git clone https://github.com/samtools/htslib
+git clone https://github.com/samtools/samtools
+cd samtools
+make
+
+./samtools/samtools sort .bam -o .sorted.bam
+
+```
+
